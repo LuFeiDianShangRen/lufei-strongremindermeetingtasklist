@@ -33,6 +33,7 @@ export interface ReminderItem {
   recurrenceRule: RecurrenceRule;
   holidayPolicy: HolidayPolicy;
   enabled: boolean;
+  completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

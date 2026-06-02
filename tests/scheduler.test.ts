@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isChinaWorkday } from "../src/shared/holidays";
-import { getDueAlerts } from "../src/shared/scheduler";
+import { buildAlertKey, getDueAlerts, getUnconfirmedAlerts } from "../src/shared/scheduler";
 import { defaultHolidayPolicy, defaultRecurrenceRule, defaultSettings, ReminderItem } from "../src/shared/types";
 
 function makeReminder(overrides: Partial<ReminderItem> = {}): ReminderItem {
@@ -62,5 +62,38 @@ describe("reminder scheduling", () => {
     );
 
     expect(due).toHaveLength(0);
+  });
+
+  it("does not schedule completed reminders", () => {
+    const settings = defaultSettings();
+    const due = getDueAlerts(
+      [makeReminder({ completedAt: "2026-06-02T08:00:00.000Z" })],
+      {},
+      settings,
+      new Date("2026-05-30T09:55:00.000Z"),
+      new Date("2026-05-30T09:40:00.000Z")
+    );
+
+    expect(due).toHaveLength(0);
+  });
+
+  it("does not repeat unconfirmed alerts for completed reminders", () => {
+    const item = makeReminder({ completedAt: "2026-06-02T08:00:00.000Z" });
+    const occurrenceAt = "2026-05-30T10:00:00.000Z";
+    const key = buildAlertKey(item.id, occurrenceAt, 5);
+    const alerts = getUnconfirmedAlerts([item], {
+      [key]: {
+        key,
+        itemId: item.id,
+        occurrenceAt,
+        remindAt: "2026-05-30T09:55:00.000Z",
+        leadMinutes: 5,
+        triggeredAt: "2026-05-30T09:55:00.000Z",
+        lastShownAt: "2026-05-30T09:55:00.000Z",
+        confirmedAt: null
+      }
+    });
+
+    expect(alerts).toHaveLength(0);
   });
 });

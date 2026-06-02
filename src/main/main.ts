@@ -19,7 +19,7 @@ import { ReminderScheduler } from "./scheduler";
 import { ReminderStore } from "./store";
 import { createTrayIconPng } from "./trayIcon";
 
-const appId = "com.lufei.worklist";
+const appId = "com.lufei.strongremindermeetingtasklist";
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 const rendererRoot = isDev ? process.env.VITE_DEV_SERVER_URL! : join(__dirname, "..", "..", "dist");
 const preloadPath = join(__dirname, "..", "preload", "preload.js");
@@ -34,10 +34,10 @@ const store = new ReminderStore();
 const overlayWindows = new Map<string, BrowserWindow[]>();
 const singleInstancePipePath =
   process.platform === "win32"
-    ? "\\\\.\\pipe\\lufei-worklist-single-instance"
-    : join(app.getPath("temp"), "lufei-worklist-single-instance.sock");
+    ? "\\\\.\\pipe\\lufei-strongremindermeetingtasklist-single-instance"
+    : join(app.getPath("temp"), "lufei-strongremindermeetingtasklist-single-instance.sock");
 
-app.setName("路飞工作清单");
+app.setName("路飞-强提醒会议任务清单");
 if (process.platform === "win32") {
   app.setAppUserModelId(appId);
 }
@@ -57,8 +57,8 @@ function showAboutDialog(): void {
   const options: Electron.MessageBoxOptions = {
     type: "info",
     title: "关于路飞清单",
-    message: "路飞工作清单",
-    detail: "版本：1.0\n版权公告：路飞版权所有",
+    message: "路飞-强提醒会议任务清单",
+    detail: "版本：1.0.1\n版权公告：路飞版权所有",
     buttons: ["确定"],
     icon: loadAppIcon(64)
   };
@@ -133,10 +133,10 @@ function createTray(): void {
   }
 
   tray = new Tray(loadAppIcon(32));
-  tray.setToolTip("路飞工作清单");
+  tray.setToolTip("路飞-强提醒会议任务清单");
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: "打开路飞工作清单", click: () => showMainWindow() },
+      { label: "打开路飞-强提醒会议任务清单", click: () => showMainWindow() },
       { type: "separator" },
       {
         label: "退出",
@@ -163,7 +163,7 @@ async function createMainWindow(hidden = false): Promise<void> {
     height: 760,
     minWidth: 920,
     minHeight: 620,
-    title: "路飞工作清单",
+    title: "路飞-强提醒会议任务清单",
     titleBarStyle: "hidden",
     titleBarOverlay: {
       color: "#fbfbfa",

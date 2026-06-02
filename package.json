@@ -1,34 +1,34 @@
 {
   "name": "lufei-strongremindermeetingtasklist",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
-  "description": "Windows desktop reminder app with topmost floating alerts.",
+  "description": "Lufei Strong Reminder Meeting Task List for Windows.",
   "main": "dist-electron/main/main.js",
-  "productName": "路飞工作清单",
+  "productName": "路飞-强提醒会议任务清单",
   "author": "路飞",
   "license": "MIT",
   "copyright": "路飞版权所有",
-  "homepage": "https://github.com/LuFeiDianShangRen/lufei-strongremindermeetingtasklist#readme",
+  "homepage": "https://github.com/LuFeiDianShangRen/strongremindermeetingtasklist#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LuFeiDianShangRen/lufei-strongremindermeetingtasklist.git"
+    "url": "https://github.com/LuFeiDianShangRen/strongremindermeetingtasklist.git"
   },
   "bugs": {
-    "url": "https://github.com/LuFeiDianShangRen/lufei-strongremindermeetingtasklist/issues"
+    "url": "https://github.com/LuFeiDianShangRen/strongremindermeetingtasklist/issues"
   },
   "scripts": {
     "dev": "concurrently -k \"tsc -p tsconfig.main.json --watch --preserveWatchOutput\" \"vite --host 127.0.0.1\" \"wait-on dist-electron/main/main.js http://127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
     "build": "tsc -p tsconfig.main.json && vite build",
     "test": "vitest run",
     "package:win": "npm run package:portable",
-    "package:portable": "npm run package:portable-dir && npm run icon:win && powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path 'release/路飞工作清单免安装版 1.0.0.zip') { Remove-Item 'release/路飞工作清单免安装版 1.0.0.zip' -Force }; Compress-Archive -Path 'release/win-unpacked/*' -DestinationPath 'release/路飞工作清单免安装版 1.0.0.zip' -Force\"",
-    "package:portable-dir": "npm run build && electron-builder --win --dir",
+    "package:portable": "npm run package:portable-dir && npm run icon:win -- release\\1.0.1\\win-unpacked && powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Test-Path 'release/路飞-强提醒会议任务清单免安装版 1.0.1.zip') { Remove-Item 'release/路飞-强提醒会议任务清单免安装版 1.0.1.zip' -Force }; Compress-Archive -Path 'release/1.0.1/win-unpacked/*' -DestinationPath 'release/路飞-强提醒会议任务清单免安装版 1.0.1.zip' -Force\"",
+    "package:portable-dir": "npm run build && electron-builder --win --dir -c.directories.output=release/1.0.1",
     "package:installer": "npm run build && electron-builder --win nsis",
     "icon:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/apply-win-icon.ps1"
   },
   "build": {
-    "appId": "com.lufei.worklist",
-    "productName": "路飞工作清单",
+    "appId": "com.lufei.strongremindermeetingtasklist",
+    "productName": "路飞-强提醒会议任务清单",
     "directories": {
       "output": "release"
     },
@@ -44,10 +44,10 @@
       "signAndEditExecutable": false
     },
     "portable": {
-      "artifactName": "路飞工作清单免安装版 ${version}.${ext}"
+      "artifactName": "路飞-强提醒会议任务清单免安装版 ${version}.${ext}"
     },
     "nsis": {
-      "artifactName": "路飞工作清单安装包 ${version}.${ext}",
+      "artifactName": "路飞-强提醒会议任务清单安装包 ${version}.${ext}",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "oneClick": false,

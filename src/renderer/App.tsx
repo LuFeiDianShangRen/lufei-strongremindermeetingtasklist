@@ -3,11 +3,14 @@ import {
   Check,
   Download,
   Inbox,
+  ListChecks,
   ListTodo,
   Plus,
   Power,
   Save,
   Settings,
+  Square,
+  SquareCheck,
   Trash2,
   Upload,
   Volume2
@@ -25,7 +28,7 @@ import {
   ReminderItem
 } from "../shared/types";
 
-type ViewKey = "all" | "today" | "future" | "disabled";
+type ViewKey = "all" | "today" | "future" | "completed" | "disabled";
 
 const menuGroups = [
   {
@@ -111,6 +114,7 @@ function newReminder(settings: AppSettings): ReminderItem {
     recurrenceRule: defaultRecurrenceRule(),
     holidayPolicy: defaultHolidayPolicy(),
     enabled: true,
+    completedAt: null,
     createdAt: now,
     updatedAt: now
   };
@@ -137,6 +141,10 @@ function isToday(value: string): boolean {
 
 function isFuture(value: string): boolean {
   return new Date(value).getTime() > Date.now();
+}
+
+function isCompleted(item: ReminderItem): boolean {
+  return Boolean(item.completedAt);
 }
 
 function pad2(value: number): string {
@@ -249,27 +257,41 @@ export function App(): JSX.Element {
     [data.reminders]
   );
 
+  const activeReminders = useMemo(
+    () => sortedReminders.filter((item) => !isCompleted(item)),
+    [sortedReminders]
+  );
+
+  const completedReminders = useMemo(
+    () => sortedReminders.filter((item) => isCompleted(item)),
+    [sortedReminders]
+  );
+
   const visibleReminders = useMemo(() => {
     if (activeView === "today") {
-      return sortedReminders.filter((item) => item.enabled && isToday(item.startAt));
+      return activeReminders.filter((item) => item.enabled && isToday(item.startAt));
     }
     if (activeView === "future") {
-      return sortedReminders.filter((item) => item.enabled && isFuture(item.startAt));
+      return activeReminders.filter((item) => item.enabled && isFuture(item.startAt));
+    }
+    if (activeView === "completed") {
+      return completedReminders;
     }
     if (activeView === "disabled") {
-      return sortedReminders.filter((item) => !item.enabled);
+      return activeReminders.filter((item) => !item.enabled);
     }
-    return sortedReminders;
-  }, [activeView, sortedReminders]);
+    return activeReminders;
+  }, [activeReminders, activeView, completedReminders]);
 
   const navItems = useMemo(
     () => [
-      { key: "all" as const, label: "全部", icon: ListTodo, count: data.reminders.length },
-      { key: "today" as const, label: "今天", icon: CalendarClock, count: data.reminders.filter((item) => item.enabled && isToday(item.startAt)).length },
-      { key: "future" as const, label: "之后", icon: Inbox, count: data.reminders.filter((item) => item.enabled && isFuture(item.startAt)).length },
-      { key: "disabled" as const, label: "已停用", icon: Power, count: data.reminders.filter((item) => !item.enabled).length }
+      { key: "all" as const, label: "全部", icon: ListTodo, count: activeReminders.length },
+      { key: "today" as const, label: "今天", icon: CalendarClock, count: activeReminders.filter((item) => item.enabled && isToday(item.startAt)).length },
+      { key: "future" as const, label: "之后", icon: Inbox, count: activeReminders.filter((item) => item.enabled && isFuture(item.startAt)).length },
+      { key: "completed" as const, label: "已完成", icon: ListChecks, count: completedReminders.length },
+      { key: "disabled" as const, label: "已停用", icon: Power, count: activeReminders.filter((item) => !item.enabled).length }
     ],
-    [data.reminders]
+    [activeReminders, completedReminders]
   );
 
   const viewTitle = navItems.find((item) => item.key === activeView)?.label ?? "全部";
@@ -318,6 +340,22 @@ export function App(): JSX.Element {
     setSelectedId(item.id);
     setDraft(item);
     setStatus("");
+  };
+
+  const toggleCompleted = async (item: ReminderItem): Promise<void> => {
+    const completed = isCompleted(item);
+    const next = await window.reminderApi.saveReminder({
+      ...item,
+      completedAt: completed ? null : new Date().toISOString(),
+      enabled: completed ? true : false
+    });
+    const saved = next.reminders.find((reminder) => reminder.id === item.id) ?? null;
+
+    setData(next);
+    setSelectedId(saved?.id ?? null);
+    setDraft(saved);
+    setActiveView(completed ? "all" : "completed");
+    setStatus(completed ? "已恢复到全部。" : "已完成，已移入已完成。");
   };
 
   const updateSettings = async (settings: AppSettings): Promise<void> => {
@@ -501,20 +539,39 @@ export function App(): JSX.Element {
             <div className="empty-list">这个清单里还没有提醒。</div>
           ) : (
             visibleReminders.map((item) => (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                className={`reminder-row ${item.id === selectedId ? "selected" : ""}`}
+                role="button"
+                tabIndex={0}
+                className={`reminder-row ${item.id === selectedId ? "selected" : ""} ${isCompleted(item) ? "completed" : ""}`}
                 onClick={() => selectReminder(item)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    selectReminder(item);
+                  }
+                }}
               >
-                <span className={`status-dot ${item.enabled ? "enabled" : "disabled"}`} />
+                <button
+                  type="button"
+                  className={`complete-toggle ${isCompleted(item) ? "completed" : ""}`}
+                  title={isCompleted(item) ? "恢复为未完成" : "完成"}
+                  aria-label={isCompleted(item) ? "恢复为未完成" : "完成"}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void toggleCompleted(item);
+                  }}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
+                  {isCompleted(item) ? <SquareCheck size={18} /> : <Square size={18} />}
+                </button>
                 <span className="reminder-main">
                   <span className="reminder-title">{item.title}</span>
                   <span className="reminder-meta">
                     {new Date(item.startAt).toLocaleString()} · 提前 {item.leadMinutes.join(" / ")} 分钟
                   </span>
                 </span>
-              </button>
+              </div>
             ))
           )}
         </div>

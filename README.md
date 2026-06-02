@@ -1,6 +1,6 @@
 # 路飞-强提醒会议任务清单
 
-lufei StrongReminderMeetingTaskList
+Strong Reminder Meeting Task List
 
 路飞-强提醒会议任务清单是一款 Windows 桌面提醒工具。软件名称为“路飞工作清单”，支持添加会议、任务和待办事项，并在指定时间前通过置顶飘动提醒条进行提醒。
 
@@ -13,6 +13,7 @@ lufei StrongReminderMeetingTaskList
 - 支持开机启动
 - 支持托盘后台运行
 - 支持本地 JSON 导入和导出
+- 支持完成任务并移动到已完成列表
 - 支持多屏幕置顶飘动提醒条
 - 未点击“知道了”时，提醒条会循环出现
 - 支持免安装版和安装包打包
@@ -34,11 +35,11 @@ npm run dev
 
 最新 Windows 免安装版：
 
-- [lufei-strongremindermeetingtasklist-v1.0.0-windows-portable.zip](https://github.com/LuFeiDianShangRen/lufei-strongremindermeetingtasklist/releases/download/v1.0.0/lufei-strongremindermeetingtasklist-v1.0.0-windows-portable.zip)
+- [strongremindermeetingtasklist-v1.0.1-windows-portable.zip](https://github.com/LuFeiDianShangRen/strongremindermeetingtasklist/releases/download/v1.0.1/strongremindermeetingtasklist-v1.0.1-windows-portable.zip)
 
 全部版本：
 
-- [GitHub Releases](https://github.com/LuFeiDianShangRen/lufei-strongremindermeetingtasklist/releases)
+- [GitHub Releases](https://github.com/LuFeiDianShangRen/strongremindermeetingtasklist/releases)
 
 ## 测试
 
@@ -61,8 +62,8 @@ npm run package:portable
 生成结果：
 
 ```text
-release/win-unpacked/路飞工作清单.exe
-release/路飞工作清单免安装版 1.0.0.zip
+release/1.0.1/win-unpacked/路飞-强提醒会议任务清单.exe
+release/路飞-强提醒会议任务清单免安装版 1.0.1.zip
 ```
 
 ## 生成安装包
@@ -74,7 +75,7 @@ npm run package:installer
 生成结果：
 
 ```text
-release/路飞工作清单安装包 1.0.0.exe
+release/路飞-强提醒会议任务清单安装包 1.0.1.exe
 ```
 
 ## 数据存储
@@ -96,3 +97,4 @@ release/路飞工作清单安装包 1.0.0.exe
 ## 开源协议
 
 本项目使用 [MIT License](./LICENSE)。
+

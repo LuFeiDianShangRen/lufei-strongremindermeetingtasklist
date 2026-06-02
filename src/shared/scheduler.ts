@@ -27,7 +27,7 @@ export function buildAlertKey(itemId: string, occurrenceAt: string, leadMinutes:
 }
 
 export function enumerateOccurrences(item: ReminderItem, from: Date, to: Date, settings: AppSettings): Date[] {
-  if (!item.enabled || to < from) {
+  if (!item.enabled || item.completedAt || to < from) {
     return [];
   }
 
@@ -214,17 +214,23 @@ export function getUnconfirmedAlerts(reminders: ReminderItem[], alerts: Record<s
   const reminderMap = new Map(reminders.map((item) => [item.id, item]));
 
   return Object.values(alerts)
-    .filter((alert) => !alert.confirmedAt)
-    .map((alert) => {
+    .reduce<AlertOccurrence[]>((items, alert) => {
       const item = reminderMap.get(alert.itemId);
-      return {
+
+      if (alert.confirmedAt || !item || !item.enabled || item.completedAt) {
+        return items;
+      }
+
+      items.push({
         key: alert.key,
         itemId: alert.itemId,
-        title: item?.title ?? "提醒",
-        description: item?.description ?? "",
+        title: item.title,
+        description: item.description,
         occurrenceAt: alert.occurrenceAt,
         remindAt: alert.remindAt,
         leadMinutes: alert.leadMinutes
-      };
-    });
+      });
+
+      return items;
+    }, []);
 }

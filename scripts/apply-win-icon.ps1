@@ -1,7 +1,11 @@
+param(
+  [string]$AppOut = "release\win-unpacked"
+)
+
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$appOut = Join-Path $root "release\win-unpacked"
+$appOut = if ([System.IO.Path]::IsPathRooted($AppOut)) { $AppOut } else { Join-Path $root $AppOut }
 $icon = Join-Path $root "build\icon.ico"
 $cacheRoot = Join-Path $env:LOCALAPPDATA "electron-builder\Cache\winCodeSign"
 $rcedit = $null

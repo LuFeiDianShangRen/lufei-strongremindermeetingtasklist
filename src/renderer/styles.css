@@ -365,7 +365,7 @@ button {
 
 .reminder-row {
   display: grid;
-  grid-template-columns: 18px 1fr;
+  grid-template-columns: 24px 1fr;
   align-items: start;
   gap: 10px;
   width: 100%;
@@ -376,6 +376,7 @@ button {
   background: transparent;
   border: 0;
   border-radius: 8px;
+  cursor: pointer;
 }
 
 .reminder-row:hover,
@@ -390,21 +391,44 @@ button {
     0 0 0 1px #e1e1dd;
 }
 
-.status-dot {
-  width: 13px;
-  height: 13px;
-  margin-top: 3px;
-  border: 2px solid #9aa0a6;
-  border-radius: 999px;
+.reminder-row:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
 }
 
-.status-dot.enabled {
-  border-color: #2563eb;
+.complete-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 0;
+  padding: 0;
+  color: #2563eb;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
 }
 
-.status-dot.disabled {
-  border-color: #c9a1a1;
-  background: #f9e1de;
+.complete-toggle:hover {
+  background: #e9efff;
+}
+
+.complete-toggle.completed {
+  color: #111111;
+}
+
+.complete-toggle svg {
+  display: block;
+}
+
+.reminder-row.completed .reminder-title,
+.reminder-row.completed .reminder-meta {
+  color: #6b7280;
+}
+
+.reminder-row.completed .reminder-title {
+  text-decoration: line-through;
 }
 
 .reminder-main {

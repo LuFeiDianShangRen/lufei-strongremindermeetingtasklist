@@ -125,12 +125,35 @@ describe("renderer reminder creation", () => {
 
     expect(container.querySelector<HTMLInputElement>(".title-input")?.value).toBe("第一个任务");
 
-    const rows = Array.from(container.querySelectorAll<HTMLButtonElement>(".reminder-row"));
+    const rows = Array.from(container.querySelectorAll<HTMLElement>(".reminder-row"));
     await act(async () => {
       rows[1]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
     expect(container.querySelector<HTMLInputElement>(".title-input")?.value).toBe("第二个任务");
+  });
+
+  it("moves a reminder to completed when the square button is clicked", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-02T08:00:00.000Z"));
+    data = {
+      ...data,
+      reminders: [reminder("a", "要完成的任务")]
+    };
+
+    await act(async () => {
+      root.render(<App />);
+    });
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(".complete-toggle")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    const saved = saveReminder.mock.calls[0]?.[0] as ReminderItem;
+    expect(saved.completedAt).toBe("2026-06-02T08:00:00.000Z");
+    expect(saved.enabled).toBe(false);
+    expect(container.textContent).toContain("已完成");
+    expect(container.querySelector(".reminder-title")?.textContent).toBe("要完成的任务");
   });
 
   it("sets the reminder time to the nearest five-minute step when now is clicked", async () => {

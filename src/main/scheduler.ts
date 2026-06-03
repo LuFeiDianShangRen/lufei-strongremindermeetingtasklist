@@ -1,4 +1,4 @@
-import { getDueAlerts, getUnconfirmedAlerts } from "../shared/scheduler";
+import { getDueAlerts, getUnconfirmedAlerts, isAlertSnoozed } from "../shared/scheduler";
 import { AlertOccurrence } from "../shared/types";
 import { MINUTE_MS } from "../shared/date";
 import { ReminderStore } from "./store";
@@ -49,12 +49,12 @@ export class ReminderScheduler {
         : new Date(now.getTime() - 24 * 60 * MINUTE_MS);
 
       const due = getDueAlerts(data.reminders, data.alerts, data.settings, now, windowStart);
-      const unconfirmed = getUnconfirmedAlerts(data.reminders, data.alerts);
+      const unconfirmed = getUnconfirmedAlerts(data.reminders, data.alerts, now);
       const repeatAfter = Math.max(10, data.settings.overlayRepeatSeconds) * 1_000;
 
       for (const alert of [...due, ...unconfirmed]) {
         const current = (await this.store.getData()).alerts[alert.key];
-        if (current?.confirmedAt) {
+        if (isAlertSnoozed(current, now)) {
           continue;
         }
 

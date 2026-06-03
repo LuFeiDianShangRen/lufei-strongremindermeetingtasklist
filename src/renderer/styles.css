@@ -85,7 +85,9 @@ button {
   flex-direction: column;
   gap: 14px;
   min-width: 0;
+  min-height: 0;
   padding: 14px;
+  overflow-y: auto;
   background: #f2f2ef;
   border-right: 1px solid #ddddd9;
 }
@@ -288,6 +290,10 @@ button {
   gap: 8px;
 }
 
+.sync-tools {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .sidebar-tools button {
   min-height: 34px;
   color: #1f2328;
@@ -311,10 +317,23 @@ button {
   gap: 12px;
 }
 
+.sync-details {
+  border-top: 1px solid #e6e6e1;
+  padding-top: 4px;
+}
+
+.setting-note {
+  margin: 0;
+  color: #6f747b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .list-pane {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   background: #fbfbfa;
   border-right: 1px solid #ddddd9;
 }
@@ -357,6 +376,7 @@ button {
 .reminder-list {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: 4px;
   min-height: 0;
   padding: 0 8px 16px;

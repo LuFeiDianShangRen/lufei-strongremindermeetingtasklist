@@ -23,7 +23,7 @@ function Overlay(): JSX.Element {
           {alert.description ? <span className="alert-description">{alert.description}</span> : null}
         </span>
         <button type="button" className="ack-button" onClick={() => window.reminderApi.acknowledgeOverlay(alert.key)}>
-          知道了
+          我马上去做
         </button>
       </span>
     </div>

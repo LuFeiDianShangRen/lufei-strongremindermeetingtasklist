@@ -14,12 +14,14 @@ import { readFile, writeFile } from "node:fs/promises";
 import { connect, createServer, type Server } from "node:net";
 import { join } from "node:path";
 import { createBackup, mergeBackup, parseBackup } from "../shared/backup";
+import { tickTickTaskToReminder } from "../shared/ticktick";
 import { AlertOccurrence, AppData, AppSettings, ReminderItem } from "../shared/types";
 import { ReminderScheduler } from "./scheduler";
 import { ReminderStore } from "./store";
+import { authorizeTickTick, fetchTickTickProjectData } from "./ticktick";
 import { createTrayIconPng } from "./trayIcon";
 
-const appId = "com.lufei.strongremindermeetingtasklist";
+const appId = "com.lufei.worklist";
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 const rendererRoot = isDev ? process.env.VITE_DEV_SERVER_URL! : join(__dirname, "..", "..", "dist");
 const preloadPath = join(__dirname, "..", "preload", "preload.js");
@@ -34,10 +36,10 @@ const store = new ReminderStore();
 const overlayWindows = new Map<string, BrowserWindow[]>();
 const singleInstancePipePath =
   process.platform === "win32"
-    ? "\\\\.\\pipe\\lufei-strongremindermeetingtasklist-single-instance"
-    : join(app.getPath("temp"), "lufei-strongremindermeetingtasklist-single-instance.sock");
+    ? "\\\\.\\pipe\\lufei-worklist-single-instance"
+    : join(app.getPath("temp"), "lufei-worklist-single-instance.sock");
 
-app.setName("路飞-强提醒会议任务清单");
+app.setName("路飞工作清单");
 if (process.platform === "win32") {
   app.setAppUserModelId(appId);
 }
@@ -57,8 +59,8 @@ function showAboutDialog(): void {
   const options: Electron.MessageBoxOptions = {
     type: "info",
     title: "关于路飞清单",
-    message: "路飞-强提醒会议任务清单",
-    detail: "版本：1.0.1\n版权公告：路飞版权所有",
+    message: "路飞工作清单",
+    detail: `版本：${app.getVersion()}\n版权公告：路飞版权所有`,
     buttons: ["确定"],
     icon: loadAppIcon(64)
   };
@@ -133,10 +135,10 @@ function createTray(): void {
   }
 
   tray = new Tray(loadAppIcon(32));
-  tray.setToolTip("路飞-强提醒会议任务清单");
+  tray.setToolTip("路飞工作清单");
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: "打开路飞-强提醒会议任务清单", click: () => showMainWindow() },
+      { label: "打开路飞工作清单", click: () => showMainWindow() },
       { type: "separator" },
       {
         label: "退出",
@@ -163,7 +165,7 @@ async function createMainWindow(hidden = false): Promise<void> {
     height: 760,
     minWidth: 920,
     minHeight: 620,
-    title: "路飞-强提醒会议任务清单",
+    title: "路飞工作清单",
     titleBarStyle: "hidden",
     titleBarOverlay: {
       color: "#fbfbfa",
@@ -460,6 +462,62 @@ function registerIpc(): void {
     await applyLoginItemSettings(data.settings);
     broadcastDataChanged(data);
     return data;
+  });
+
+  ipcMain.handle("ticktick:connect", async (_event, settings: AppSettings["tickTickSync"]) => {
+    const accessToken = await authorizeTickTick(settings);
+    const current = await store.getData();
+    const data = await store.updateSettings({
+      ...current.settings,
+      tickTickSync: {
+        ...settings,
+        accessToken,
+        lastSyncAt: current.settings.tickTickSync.lastSyncAt
+      }
+    });
+    broadcastDataChanged(data);
+    return data;
+  });
+
+  ipcMain.handle("ticktick:sync", async (_event, settings: AppSettings["tickTickSync"]) => {
+    const current = await store.getData();
+    const syncSettings = {
+      ...current.settings.tickTickSync,
+      ...settings
+    };
+    const projectData = await fetchTickTickProjectData(syncSettings);
+    const now = new Date();
+    const reminders = projectData
+      .flatMap((entry) =>
+        entry.tasks.map((task) =>
+          tickTickTaskToReminder(
+            task,
+            entry.project,
+            current.settings.defaultLeadMinutes,
+            current.reminders.find((item) => item.id === `ticktick:${task.projectId}:${task.id}`),
+            now
+          )
+        )
+      )
+      .filter((item): item is ReminderItem => Boolean(item));
+    const skipped = projectData.reduce((count, entry) => count + entry.tasks.length, 0) - reminders.length;
+    const result = await store.upsertReminders(reminders);
+    const data = await store.updateSettings({
+      ...result.data.settings,
+      tickTickSync: {
+        ...syncSettings,
+        lastSyncAt: now.toISOString()
+      }
+    });
+    broadcastDataChanged(data);
+    await scheduler.runNow();
+    return {
+      data,
+      imported: result.imported,
+      updated: result.updated,
+      skipped,
+      projects: projectData.length
+    };
   });
 
   ipcMain.handle("backup:export", async () => {

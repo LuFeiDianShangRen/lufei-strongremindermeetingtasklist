@@ -1,6 +1,7 @@
 import { app } from "electron";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { ACKNOWLEDGE_SNOOZE_MINUTES } from "../shared/scheduler";
 import {
   AlertOccurrence,
   AlertRecord,
@@ -64,6 +65,28 @@ export class ReminderStore {
     return data;
   }
 
+  async upsertReminders(items: ReminderItem[]): Promise<{ data: AppData; imported: number; updated: number }> {
+    const data = await this.load();
+    let imported = 0;
+    let updated = 0;
+
+    for (const item of items) {
+      const index = data.reminders.findIndex((existing) => existing.id === item.id);
+      const nextItem = { ...item, updatedAt: new Date().toISOString() };
+
+      if (index >= 0) {
+        data.reminders[index] = nextItem;
+        updated += 1;
+      } else {
+        data.reminders.push(nextItem);
+        imported += 1;
+      }
+    }
+
+    await this.save();
+    return { data, imported, updated };
+  }
+
   async deleteReminder(id: string): Promise<AppData> {
     const data = await this.load();
     data.reminders = data.reminders.filter((item) => item.id !== id);
@@ -101,7 +124,11 @@ export class ReminderStore {
       leadMinutes: alert.leadMinutes,
       triggeredAt: existing?.triggeredAt ?? now,
       lastShownAt: now,
-      confirmedAt: existing?.confirmedAt ?? null
+      confirmedAt: existing?.confirmedAt ?? null,
+      snoozedUntil:
+        existing?.snoozedUntil && new Date(existing.snoozedUntil).getTime() > Date.now()
+          ? existing.snoozedUntil
+          : null
     };
 
     await this.save();
@@ -116,7 +143,10 @@ export class ReminderStore {
       return null;
     }
 
-    existing.confirmedAt = new Date().toISOString();
+    const now = new Date();
+    existing.lastShownAt = now.toISOString();
+    existing.confirmedAt = null;
+    existing.snoozedUntil = new Date(now.getTime() + ACKNOWLEDGE_SNOOZE_MINUTES * 60 * 1_000).toISOString();
     await this.save();
     return existing;
   }
@@ -145,6 +175,10 @@ export class ReminderStore {
       holidayOverrides: {
         ...defaultSettings().holidayOverrides,
         ...value.settings?.holidayOverrides
+      },
+      tickTickSync: {
+        ...defaultSettings().tickTickSync,
+        ...value.settings?.tickTickSync
       }
     };
 

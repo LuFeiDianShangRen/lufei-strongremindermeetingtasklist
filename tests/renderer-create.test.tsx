@@ -14,13 +14,13 @@ function emptyData(): AppData {
   };
 }
 
-function reminder(id: string, title: string): ReminderItem {
+function reminder(id: string, title: string, startAt = "2026-05-30T10:00:00.000Z"): ReminderItem {
   const now = new Date("2026-05-30T00:00:00.000Z").toISOString();
   return {
     id,
     title,
     description: "",
-    startAt: "2026-05-30T10:00:00.000Z",
+    startAt,
     leadMinutes: [15],
     recurrenceRule: defaultRecurrenceRule(),
     holidayPolicy: defaultHolidayPolicy(),
@@ -191,5 +191,43 @@ describe("renderer reminder creation", () => {
       button.textContent
     );
     expect(options).toEqual(["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"]);
+  });
+
+  it("shows TickTick sync before advanced settings", async () => {
+    await act(async () => {
+      root.render(<App />);
+    });
+
+    const text = container.textContent ?? "";
+    expect(text.indexOf("滴答清单同步")).toBeGreaterThan(-1);
+    expect(text.indexOf("滴答清单同步")).toBeLessThan(text.indexOf("更多设置"));
+  });
+
+  it("shows yesterday and earlier reminders in the previous view", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-03T09:00:00.000Z"));
+    data = {
+      ...data,
+      reminders: [
+        reminder("past", "昨天任务", "2026-06-02T10:00:00.000Z"),
+        reminder("today", "今天任务", "2026-06-03T10:00:00.000Z")
+      ]
+    };
+
+    await act(async () => {
+      root.render(<App />);
+    });
+
+    const previousButton = Array.from(container.querySelectorAll<HTMLButtonElement>(".nav-item")).find((button) =>
+      button.textContent?.includes("之前")
+    );
+
+    await act(async () => {
+      previousButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(container.querySelector(".pane-header")?.textContent).toContain("之前");
+    expect(container.textContent).toContain("昨天任务");
+    expect(container.querySelector(".reminder-list")?.textContent).not.toContain("今天任务");
   });
 });

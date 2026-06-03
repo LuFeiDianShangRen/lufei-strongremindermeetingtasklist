@@ -1,11 +1,15 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { AlertOccurrence, AppData, AppSettings, ReminderItem } from "../shared/types";
+import { AlertOccurrence, AppData, AppSettings, ReminderItem, TickTickSyncResult } from "../shared/types";
 
 const api = {
   getData: (): Promise<AppData> => ipcRenderer.invoke("app-data:get"),
   saveReminder: (item: ReminderItem): Promise<AppData> => ipcRenderer.invoke("reminder:save", item),
   deleteReminder: (id: string): Promise<AppData> => ipcRenderer.invoke("reminder:delete", id),
   saveSettings: (settings: AppSettings): Promise<AppData> => ipcRenderer.invoke("settings:save", settings),
+  connectTickTick: (settings: AppSettings["tickTickSync"]): Promise<AppData> =>
+    ipcRenderer.invoke("ticktick:connect", settings),
+  syncTickTick: (settings: AppSettings["tickTickSync"]): Promise<TickTickSyncResult> =>
+    ipcRenderer.invoke("ticktick:sync", settings),
   exportBackup: (): Promise<{ canceled: boolean; filePath?: string }> => ipcRenderer.invoke("backup:export"),
   importBackup: (): Promise<{ canceled: boolean; imported?: number; conflicts?: number; overwrite?: boolean }> =>
     ipcRenderer.invoke("backup:import"),

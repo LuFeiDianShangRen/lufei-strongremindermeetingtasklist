@@ -21,9 +21,28 @@ import {
 import { isChinaWorkday, isPlainWorkday } from "./holidays";
 
 const MAX_ENUMERATED_OCCURRENCES = 3_000;
+export const ACKNOWLEDGE_SNOOZE_MINUTES = 10;
 
 export function buildAlertKey(itemId: string, occurrenceAt: string, leadMinutes: LeadMinutes): string {
   return `${itemId}|${occurrenceAt}|${leadMinutes}`;
+}
+
+export function isAlertSnoozed(alert: AlertRecord | undefined, now: Date): boolean {
+  if (!alert) {
+    return false;
+  }
+
+  const snoozedUntil = alert.snoozedUntil ?? null;
+  if (snoozedUntil && new Date(snoozedUntil).getTime() > now.getTime()) {
+    return true;
+  }
+
+  if (alert.confirmedAt && !alert.snoozedUntil) {
+    const legacySnoozedUntil = new Date(alert.confirmedAt).getTime() + ACKNOWLEDGE_SNOOZE_MINUTES * MINUTE_MS;
+    return legacySnoozedUntil > now.getTime();
+  }
+
+  return false;
 }
 
 export function enumerateOccurrences(item: ReminderItem, from: Date, to: Date, settings: AppSettings): Date[] {
@@ -190,7 +209,7 @@ export function getDueAlerts(
 
         const occurrenceIso = occurrence.toISOString();
         const key = buildAlertKey(item.id, occurrenceIso, lead);
-        if (alerts[key]?.confirmedAt) {
+        if (isAlertSnoozed(alerts[key], now)) {
           continue;
         }
 
@@ -210,14 +229,18 @@ export function getDueAlerts(
   return due.sort((left, right) => new Date(left.remindAt).getTime() - new Date(right.remindAt).getTime());
 }
 
-export function getUnconfirmedAlerts(reminders: ReminderItem[], alerts: Record<string, AlertRecord>): AlertOccurrence[] {
+export function getUnconfirmedAlerts(
+  reminders: ReminderItem[],
+  alerts: Record<string, AlertRecord>,
+  now = new Date()
+): AlertOccurrence[] {
   const reminderMap = new Map(reminders.map((item) => [item.id, item]));
 
   return Object.values(alerts)
     .reduce<AlertOccurrence[]>((items, alert) => {
       const item = reminderMap.get(alert.itemId);
 
-      if (alert.confirmedAt || !item || !item.enabled || item.completedAt) {
+      if (!item || !item.enabled || item.completedAt || isAlertSnoozed(alert, now)) {
         return items;
       }
 

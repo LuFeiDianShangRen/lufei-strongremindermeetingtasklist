@@ -96,4 +96,65 @@ describe("reminder scheduling", () => {
 
     expect(alerts).toHaveLength(0);
   });
+
+  it("snoozes acknowledged alerts for ten minutes only", () => {
+    const item = makeReminder();
+    const occurrenceAt = "2026-05-30T10:00:00.000Z";
+    const key = buildAlertKey(item.id, occurrenceAt, 5);
+    const baseAlert = {
+      key,
+      itemId: item.id,
+      occurrenceAt,
+      remindAt: "2026-05-30T09:55:00.000Z",
+      leadMinutes: 5 as const,
+      triggeredAt: "2026-05-30T09:55:00.000Z",
+      lastShownAt: "2026-05-30T09:56:00.000Z",
+      confirmedAt: null
+    };
+
+    expect(
+      getUnconfirmedAlerts(
+        [item],
+        {
+          [key]: {
+            ...baseAlert,
+            snoozedUntil: "2026-05-30T10:06:00.000Z"
+          }
+        },
+        new Date("2026-05-30T10:05:59.000Z")
+      )
+    ).toHaveLength(0);
+
+    expect(
+      getUnconfirmedAlerts(
+        [item],
+        {
+          [key]: {
+            ...baseAlert,
+            snoozedUntil: "2026-05-30T10:06:00.000Z"
+          }
+        },
+        new Date("2026-05-30T10:06:01.000Z")
+      )
+    ).toHaveLength(1);
+  });
+
+  it("treats old confirmed alerts as a ten minute snooze", () => {
+    const item = makeReminder();
+    const occurrenceAt = "2026-05-30T10:00:00.000Z";
+    const key = buildAlertKey(item.id, occurrenceAt, 5);
+    const alert = {
+      key,
+      itemId: item.id,
+      occurrenceAt,
+      remindAt: "2026-05-30T09:55:00.000Z",
+      leadMinutes: 5 as const,
+      triggeredAt: "2026-05-30T09:55:00.000Z",
+      lastShownAt: "2026-05-30T09:56:00.000Z",
+      confirmedAt: "2026-05-30T09:56:00.000Z"
+    };
+
+    expect(getUnconfirmedAlerts([item], { [key]: alert }, new Date("2026-05-30T10:05:00.000Z"))).toHaveLength(0);
+    expect(getUnconfirmedAlerts([item], { [key]: alert }, new Date("2026-05-30T10:06:01.000Z"))).toHaveLength(1);
+  });
 });

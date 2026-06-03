@@ -3,6 +3,7 @@ export const LEAD_MINUTES = [5, 10, 15, 20, 25, 30, 60, 120] as const;
 export type LeadMinutes = (typeof LEAD_MINUTES)[number];
 export type RecurrenceFrequency = "none" | "daily" | "weekly" | "monthly" | "yearly";
 export type StartupDisplayMode = "visible" | "tray";
+export type TickTickService = "dida365" | "ticktick";
 
 export interface HolidayOverrides {
   holidays: string[];
@@ -47,6 +48,7 @@ export interface AlertRecord {
   triggeredAt: string;
   lastShownAt: string | null;
   confirmedAt: string | null;
+  snoozedUntil?: string | null;
 }
 
 export interface AppSettings {
@@ -57,6 +59,24 @@ export interface AppSettings {
   overlayRepeatSeconds: number;
   holidayOverrides: HolidayOverrides;
   lastSchedulerCheckAt: string | null;
+  tickTickSync: TickTickSyncSettings;
+}
+
+export interface TickTickSyncSettings {
+  service: TickTickService;
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  accessToken: string;
+  lastSyncAt: string | null;
+}
+
+export interface TickTickSyncResult {
+  data: AppData;
+  imported: number;
+  updated: number;
+  skipped: number;
+  projects: number;
 }
 
 export interface AppData {
@@ -110,5 +130,15 @@ export const defaultSettings = (): AppSettings => ({
     holidays: [],
     workdays: []
   },
-  lastSchedulerCheckAt: null
+  lastSchedulerCheckAt: null,
+  tickTickSync: defaultTickTickSyncSettings()
+});
+
+export const defaultTickTickSyncSettings = (): TickTickSyncSettings => ({
+  service: "dida365",
+  clientId: "",
+  clientSecret: "",
+  redirectUri: "http://127.0.0.1:38176/ticktick/callback",
+  accessToken: "",
+  lastSyncAt: null
 });

@@ -14,8 +14,10 @@ Strong Reminder Meeting Task List
 - 支持托盘后台运行
 - 支持本地 JSON 导入和导出
 - 支持完成任务并移动到已完成列表
+- 支持“之前”列表，集中查看昨天及以前任务
+- 支持同步滴答清单任务到本地提醒
 - 支持多屏幕置顶飘动提醒条
-- 未点击“知道了”时，提醒条会循环出现
+- 点击“我马上去做”后，未完成任务会继续按间隔提醒
 - 支持免安装版和安装包打包
 
 ## 系统要求
@@ -35,7 +37,7 @@ npm run dev
 
 最新 Windows 免安装版：
 
-- [strongremindermeetingtasklist-v1.0.1-windows-portable.zip](https://github.com/LuFeiDianShangRen/strongremindermeetingtasklist/releases/download/v1.0.1/strongremindermeetingtasklist-v1.0.1-windows-portable.zip)
+- [strongremindermeetingtasklist-v1.0.3-windows-portable.zip](https://github.com/LuFeiDianShangRen/strongremindermeetingtasklist/releases/download/v1.0.3/strongremindermeetingtasklist-v1.0.3-windows-portable.zip)
 
 全部版本：
 
@@ -62,8 +64,8 @@ npm run package:portable
 生成结果：
 
 ```text
-release/1.0.1/win-unpacked/路飞-强提醒会议任务清单.exe
-release/路飞-强提醒会议任务清单免安装版 1.0.1.zip
+release/1.0.3/win-unpacked/路飞-强提醒会议任务清单.exe
+release/路飞-强提醒会议任务清单免安装版 1.0.3.zip
 ```
 
 ## 生成安装包
@@ -75,14 +77,14 @@ npm run package:installer
 生成结果：
 
 ```text
-release/路飞-强提醒会议任务清单安装包 1.0.1.exe
+release/路飞-强提醒会议任务清单安装包 1.0.3.exe
 ```
 
 ## 数据存储
 
 提醒数据保存在 Electron 的用户数据目录中，文件名为 `reminders.json`。软件提供 JSON 备份导入和导出功能。
 
-本项目不包含账号系统、云同步、手机端、微信通知或邮件通知。
+本项目不包含账号系统、手机端、微信通知或邮件通知。滴答清单同步只用于把任务拉取到本地提醒。
 
 ## 系统限制
 

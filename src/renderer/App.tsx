@@ -2,11 +2,14 @@ import {
   CalendarClock,
   Check,
   Download,
+  History,
   Inbox,
   ListChecks,
   ListTodo,
+  Plug,
   Plus,
   Power,
+  RefreshCw,
   Save,
   Settings,
   Square,
@@ -28,7 +31,7 @@ import {
   ReminderItem
 } from "../shared/types";
 
-type ViewKey = "all" | "today" | "future" | "completed" | "disabled";
+type ViewKey = "all" | "today" | "previous" | "future" | "completed" | "disabled";
 
 const menuGroups = [
   {
@@ -139,6 +142,10 @@ function isToday(value: string): boolean {
   return toDateKey(new Date(value)) === toDateKey(new Date());
 }
 
+function isBeforeToday(value: string): boolean {
+  return toDateKey(new Date(value)) < toDateKey(new Date());
+}
+
 function isFuture(value: string): boolean {
   return new Date(value).getTime() > Date.now();
 }
@@ -199,6 +206,10 @@ function updateMinutePart(value: string, minute: number): string {
   return composeTimeIso(toDateKey(date), date.getHours(), minute);
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export function App(): JSX.Element {
   const [data, setData] = useState<AppData>(emptyData);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -206,6 +217,7 @@ export function App(): JSX.Element {
   const [activeView, setActiveView] = useState<ViewKey>("all");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  const [tickTickDraft, setTickTickDraft] = useState(defaultSettings().tickTickSync);
 
   useEffect(() => {
     void window.reminderApi.getData().then((loaded) => {
@@ -249,6 +261,10 @@ export function App(): JSX.Element {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    setTickTickDraft(data.settings.tickTickSync);
+  }, [data.settings.tickTickSync]);
+
   const sortedReminders = useMemo(
     () =>
       [...data.reminders].sort(
@@ -271,6 +287,9 @@ export function App(): JSX.Element {
     if (activeView === "today") {
       return activeReminders.filter((item) => item.enabled && isToday(item.startAt));
     }
+    if (activeView === "previous") {
+      return activeReminders.filter((item) => item.enabled && isBeforeToday(item.startAt));
+    }
     if (activeView === "future") {
       return activeReminders.filter((item) => item.enabled && isFuture(item.startAt));
     }
@@ -287,6 +306,7 @@ export function App(): JSX.Element {
     () => [
       { key: "all" as const, label: "全部", icon: ListTodo, count: activeReminders.length },
       { key: "today" as const, label: "今天", icon: CalendarClock, count: activeReminders.filter((item) => item.enabled && isToday(item.startAt)).length },
+      { key: "previous" as const, label: "之前", icon: History, count: activeReminders.filter((item) => item.enabled && isBeforeToday(item.startAt)).length },
       { key: "future" as const, label: "之后", icon: Inbox, count: activeReminders.filter((item) => item.enabled && isFuture(item.startAt)).length },
       { key: "completed" as const, label: "已完成", icon: ListChecks, count: completedReminders.length },
       { key: "disabled" as const, label: "已停用", icon: Power, count: activeReminders.filter((item) => !item.enabled).length }
@@ -362,6 +382,37 @@ export function App(): JSX.Element {
     const next = await window.reminderApi.saveSettings(settings);
     setData(next);
     setStatus("设置已保存。");
+  };
+
+  const saveTickTickSettings = async (): Promise<void> => {
+    const next = await window.reminderApi.saveSettings({
+      ...data.settings,
+      tickTickSync: tickTickDraft
+    });
+    setData(next);
+    setStatus("滴答清单配置已保存。");
+  };
+
+  const connectTickTick = async (): Promise<void> => {
+    setStatus("请在浏览器完成滴答清单授权。");
+    try {
+      const next = await window.reminderApi.connectTickTick(tickTickDraft);
+      setData(next);
+      setStatus("滴答清单已连接。");
+    } catch (error) {
+      setStatus(`连接失败：${errorMessage(error)}`);
+    }
+  };
+
+  const syncTickTick = async (): Promise<void> => {
+    setStatus("正在同步滴答清单任务。");
+    try {
+      const result = await window.reminderApi.syncTickTick(tickTickDraft);
+      setData(result.data);
+      setStatus(`同步完成：新增 ${result.imported}，更新 ${result.updated}，跳过 ${result.skipped}。`);
+    } catch (error) {
+      setStatus(`同步失败：${errorMessage(error)}`);
+    }
   };
 
   const runMenuAction = (action: string): void => {
@@ -450,6 +501,60 @@ export function App(): JSX.Element {
               onChange={(event) => void updateSettings({ ...data.settings, soundEnabled: event.target.checked })}
             />
           </label>
+          <details className="compact-details sync-details">
+            <summary>滴答清单同步</summary>
+            <label className="setting-field">
+              <span>账号区域</span>
+              <select
+                value={tickTickDraft.service}
+                onChange={(event) => setTickTickDraft({ ...tickTickDraft, service: event.target.value as typeof tickTickDraft.service })}
+              >
+                <option value="dida365">滴答清单</option>
+                <option value="ticktick">TickTick</option>
+              </select>
+            </label>
+            <label className="setting-field">
+              <span>客户端 ID</span>
+              <input
+                value={tickTickDraft.clientId}
+                onChange={(event) => setTickTickDraft({ ...tickTickDraft, clientId: event.target.value })}
+              />
+            </label>
+            <label className="setting-field">
+              <span>客户端密钥</span>
+              <input
+                type="password"
+                value={tickTickDraft.clientSecret}
+                onChange={(event) => setTickTickDraft({ ...tickTickDraft, clientSecret: event.target.value })}
+              />
+            </label>
+            <label className="setting-field">
+              <span>回调地址</span>
+              <input
+                value={tickTickDraft.redirectUri}
+                onChange={(event) => setTickTickDraft({ ...tickTickDraft, redirectUri: event.target.value })}
+              />
+            </label>
+            <p className="setting-note">先在滴答清单开发者中心创建应用，并保存相同回调地址。</p>
+            <p className="setting-note">OAuth Error 通常表示网页应用里没有登记回调地址。</p>
+            <p className="setting-note">
+              上次同步：{tickTickDraft.lastSyncAt ? new Date(tickTickDraft.lastSyncAt).toLocaleString() : "未同步"}
+            </p>
+            <div className="sidebar-tools sync-tools">
+              <button type="button" onClick={() => void saveTickTickSettings()}>
+                <Save size={16} />
+                保存
+              </button>
+              <button type="button" onClick={() => void connectTickTick()}>
+                <Plug size={16} />
+                连接
+              </button>
+              <button type="button" onClick={() => void syncTickTick()}>
+                <RefreshCw size={16} />
+                同步
+              </button>
+            </div>
+          </details>
           <details className="compact-details">
             <summary>更多设置</summary>
             <label className="setting-field">

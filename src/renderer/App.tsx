@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toDateKey } from "../shared/date";
+import { getNextOccurrenceAfter, isRecurringReminder } from "../shared/scheduler";
 import {
   AppData,
   AppSettings,
@@ -364,6 +365,27 @@ export function App(): JSX.Element {
 
   const toggleCompleted = async (item: ReminderItem): Promise<void> => {
     const completed = isCompleted(item);
+    if (!completed && isRecurringReminder(item)) {
+      const after = new Date(Math.max(Date.now(), new Date(item.startAt).getTime()));
+      const nextOccurrence = getNextOccurrenceAfter(item, after, data.settings);
+
+      if (nextOccurrence) {
+        const next = await window.reminderApi.saveReminder({
+          ...item,
+          startAt: nextOccurrence.toISOString(),
+          completedAt: null,
+          enabled: true
+        });
+        const saved = next.reminders.find((reminder) => reminder.id === item.id) ?? null;
+
+        setData(next);
+        setSelectedId(saved?.id ?? null);
+        setDraft(saved);
+        setStatus("已完成本次，已生成下次提醒。");
+        return;
+      }
+    }
+
     const next = await window.reminderApi.saveReminder({
       ...item,
       completedAt: completed ? null : new Date().toISOString(),

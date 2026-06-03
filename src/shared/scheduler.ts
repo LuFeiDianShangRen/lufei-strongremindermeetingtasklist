@@ -45,6 +45,10 @@ export function isAlertSnoozed(alert: AlertRecord | undefined, now: Date): boole
   return false;
 }
 
+export function isRecurringReminder(item: ReminderItem): boolean {
+  return item.recurrenceRule.frequency !== "none";
+}
+
 export function enumerateOccurrences(item: ReminderItem, from: Date, to: Date, settings: AppSettings): Date[] {
   if (!item.enabled || item.completedAt || to < from) {
     return [];
@@ -186,6 +190,27 @@ export function enumerateOccurrences(item: ReminderItem, from: Date, to: Date, s
   return occurrences.sort((left, right) => left.getTime() - right.getTime());
 }
 
+export function getNextOccurrenceAfter(item: ReminderItem, after: Date, settings: AppSettings): Date | null {
+  if (!isRecurringReminder(item)) {
+    return null;
+  }
+
+  const from = new Date(after.getTime() + 1);
+  const to = addYears(from, 5);
+  const [next] = enumerateOccurrences(
+    {
+      ...item,
+      completedAt: null,
+      enabled: true
+    },
+    from,
+    to,
+    settings
+  );
+
+  return next ?? null;
+}
+
 export function getDueAlerts(
   reminders: ReminderItem[],
   alerts: Record<string, AlertRecord>,
@@ -241,6 +266,10 @@ export function getUnconfirmedAlerts(
       const item = reminderMap.get(alert.itemId);
 
       if (!item || !item.enabled || item.completedAt || isAlertSnoozed(alert, now)) {
+        return items;
+      }
+
+      if (new Date(alert.occurrenceAt).getTime() < new Date(item.startAt).getTime()) {
         return items;
       }
 

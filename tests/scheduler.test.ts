@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isChinaWorkday } from "../src/shared/holidays";
-import { buildAlertKey, getDueAlerts, getUnconfirmedAlerts } from "../src/shared/scheduler";
+import { buildAlertKey, getDueAlerts, getNextOccurrenceAfter, getUnconfirmedAlerts } from "../src/shared/scheduler";
 import { defaultHolidayPolicy, defaultRecurrenceRule, defaultSettings, ReminderItem } from "../src/shared/types";
 
 function makeReminder(overrides: Partial<ReminderItem> = {}): ReminderItem {
@@ -77,6 +77,20 @@ describe("reminder scheduling", () => {
     expect(due).toHaveLength(0);
   });
 
+  it("finds the next occurrence for a completed daily reminder", () => {
+    const item = makeReminder({
+      startAt: "2026-06-02T10:00:00.000Z",
+      recurrenceRule: {
+        ...defaultRecurrenceRule(),
+        frequency: "daily"
+      }
+    });
+
+    expect(getNextOccurrenceAfter(item, new Date("2026-06-02T10:00:00.000Z"), defaultSettings())?.toISOString()).toBe(
+      "2026-06-03T10:00:00.000Z"
+    );
+  });
+
   it("does not repeat unconfirmed alerts for completed reminders", () => {
     const item = makeReminder({ completedAt: "2026-06-02T08:00:00.000Z" });
     const occurrenceAt = "2026-05-30T10:00:00.000Z";
@@ -90,6 +104,32 @@ describe("reminder scheduling", () => {
         leadMinutes: 5,
         triggeredAt: "2026-05-30T09:55:00.000Z",
         lastShownAt: "2026-05-30T09:55:00.000Z",
+        confirmedAt: null
+      }
+    });
+
+    expect(alerts).toHaveLength(0);
+  });
+
+  it("does not repeat old unconfirmed alerts after a recurring reminder advances", () => {
+    const item = makeReminder({
+      startAt: "2026-06-03T10:00:00.000Z",
+      recurrenceRule: {
+        ...defaultRecurrenceRule(),
+        frequency: "daily"
+      }
+    });
+    const occurrenceAt = "2026-06-02T10:00:00.000Z";
+    const key = buildAlertKey(item.id, occurrenceAt, 5);
+    const alerts = getUnconfirmedAlerts([item], {
+      [key]: {
+        key,
+        itemId: item.id,
+        occurrenceAt,
+        remindAt: "2026-06-02T09:55:00.000Z",
+        leadMinutes: 5,
+        triggeredAt: "2026-06-02T09:55:00.000Z",
+        lastShownAt: "2026-06-02T09:55:00.000Z",
         confirmedAt: null
       }
     });

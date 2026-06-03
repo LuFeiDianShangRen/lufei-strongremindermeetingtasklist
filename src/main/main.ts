@@ -585,14 +585,12 @@ function registerIpc(): void {
     performMenuAction(action, BrowserWindow.fromWebContents(event.sender));
   });
 
-  ipcMain.on("overlay:acknowledge", async (event, key: string) => {
-    const alert = await store.acknowledgeAlert(key);
+  ipcMain.on("overlay:acknowledge", (_event, key: string) => {
     closeOverlayWindows(key);
-    const data = await store.getData();
-    broadcastDataChanged(data);
-    if (alert) {
-      showMainWindow(alert.itemId);
-    }
+    void store
+      .acknowledgeAlert(key)
+      .then(() => store.getData())
+      .then((data) => broadcastDataChanged(data));
   });
 }
 

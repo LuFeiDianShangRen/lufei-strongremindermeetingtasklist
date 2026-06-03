@@ -156,6 +156,37 @@ describe("renderer reminder creation", () => {
     expect(container.querySelector(".reminder-title")?.textContent).toBe("要完成的任务");
   });
 
+  it("advances a recurring reminder instead of completing the whole task", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-02T08:00:00.000Z"));
+    data = {
+      ...data,
+      reminders: [
+        {
+          ...reminder("a", "每天重复", "2026-06-02T10:00:00.000Z"),
+          recurrenceRule: {
+            ...defaultRecurrenceRule(),
+            frequency: "daily"
+          }
+        }
+      ]
+    };
+
+    await act(async () => {
+      root.render(<App />);
+    });
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(".complete-toggle")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    const saved = saveReminder.mock.calls[0]?.[0] as ReminderItem;
+    expect(saved.completedAt).toBeNull();
+    expect(saved.enabled).toBe(true);
+    expect(saved.startAt).toBe("2026-06-03T10:00:00.000Z");
+    expect(container.textContent).toContain("已完成本次，已生成下次提醒。");
+  });
+
   it("sets the reminder time to the nearest five-minute step when now is clicked", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-31T08:09:30"));

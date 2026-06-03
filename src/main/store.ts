@@ -1,7 +1,7 @@
 import { app } from "electron";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { ACKNOWLEDGE_SNOOZE_MINUTES } from "../shared/scheduler";
+import { ACKNOWLEDGE_SNOOZE_MINUTES, getNextOccurrenceAfter, isRecurringReminder } from "../shared/scheduler";
 import {
   AlertOccurrence,
   AlertRecord,
@@ -182,11 +182,43 @@ export class ReminderStore {
       }
     };
 
+    const reminders = Array.isArray(value.reminders) ? value.reminders : [];
+
     return {
       version: 1,
-      reminders: Array.isArray(value.reminders) ? value.reminders : [],
+      reminders: reminders.map((item) => this.normalizeReminder(item, settings)),
       alerts: value.alerts ?? {},
       settings
+    };
+  }
+
+  private normalizeReminder(item: ReminderItem, settings: AppSettings): ReminderItem {
+    if (!item.completedAt || !isRecurringReminder(item)) {
+      return item;
+    }
+
+    const completedAt = new Date(item.completedAt).getTime();
+    const startAt = new Date(item.startAt).getTime();
+    const after = new Date(Math.max(completedAt, startAt));
+    const nextOccurrence = getNextOccurrenceAfter(
+      {
+        ...item,
+        completedAt: null,
+        enabled: true
+      },
+      after,
+      settings
+    );
+
+    if (!nextOccurrence) {
+      return item;
+    }
+
+    return {
+      ...item,
+      startAt: nextOccurrence.toISOString(),
+      completedAt: null,
+      enabled: true
     };
   }
 }

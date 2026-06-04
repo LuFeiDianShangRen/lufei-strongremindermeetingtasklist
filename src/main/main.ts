@@ -319,10 +319,12 @@ function createOverlayWindow(alert: AlertOccurrence, displayBounds: Electron.Rec
     hasShadow: false,
     focusable: true,
     show: false,
+    backgroundColor: "#00000000",
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      backgroundThrottling: false
     }
   });
   overlayWindowKeys.set(overlay.id, alert.key);

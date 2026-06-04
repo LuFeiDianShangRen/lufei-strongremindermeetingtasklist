@@ -5,12 +5,21 @@ import "./overlay.css";
 
 function Overlay(): JSX.Element {
   const [alert, setAlert] = useState<AlertOccurrence | null>(null);
+  const [acknowledgedKey, setAcknowledgedKey] = useState<string | null>(null);
 
   useEffect(() => window.reminderApi.onOverlayAlert(setAlert), []);
 
   if (!alert) {
     return <div className="overlay-stage" />;
   }
+
+  const acknowledge = (): void => {
+    if (acknowledgedKey === alert.key) {
+      return;
+    }
+    setAcknowledgedKey(alert.key);
+    window.reminderApi.acknowledgeOverlay(alert.key);
+  };
 
   return (
     <div className="overlay-stage">
@@ -28,7 +37,7 @@ function Overlay(): JSX.Element {
           </span>
           {alert.description ? <span className="alert-description">{alert.description}</span> : null}
         </span>
-        <button type="button" className="ack-button" onClick={() => window.reminderApi.acknowledgeOverlay(alert.key)}>
+        <button type="button" className="ack-button" onPointerDown={acknowledge} onClick={acknowledge}>
           我马上去做
         </button>
       </span>

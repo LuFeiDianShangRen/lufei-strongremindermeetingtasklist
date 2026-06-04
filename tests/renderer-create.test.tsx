@@ -192,6 +192,7 @@ describe("renderer reminder creation", () => {
     expect(saveReminder).not.toHaveBeenCalled();
     expect(container.querySelector(".status-choice-menu")?.textContent).toContain("完成");
     expect(container.querySelector(".status-choice-menu")?.textContent).toContain("进行中");
+    expect(container.querySelector(".status-choice-menu")?.textContent).toContain("停用");
 
     await act(async () => {
       container.querySelector<HTMLButtonElement>(".complete-choice")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -232,6 +233,32 @@ describe("renderer reminder creation", () => {
     expect(saved.progressSnoozedUntil).toBe("2026-06-02T08:30:00.000Z");
     expect(container.querySelector(".pane-header")?.textContent).toContain("进行中");
     expect(container.querySelector(".reminder-row")?.className).toContain("in-progress");
+  });
+
+  it("moves a reminder to disabled from the status choices", async () => {
+    data = {
+      ...data,
+      reminders: [reminder("a", "要停用的任务")]
+    };
+
+    await act(async () => {
+      root.render(<App />);
+    });
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(".complete-toggle")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>(".disable-choice")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    const saved = saveReminder.mock.calls[0]?.[0] as ReminderItem;
+    expect(saved.completedAt).toBeNull();
+    expect(saved.enabled).toBe(false);
+    expect(saved.progressStatus).toBe("todo");
+    expect(container.querySelector(".pane-header")?.textContent).toContain("已停用");
+    expect(container.querySelector(".reminder-title")?.textContent).toBe("要停用的任务");
   });
 
   it("advances a recurring reminder instead of completing the whole task", async () => {

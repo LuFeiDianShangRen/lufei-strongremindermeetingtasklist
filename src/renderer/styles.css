@@ -535,6 +535,10 @@ button {
   color: #92400e;
 }
 
+.status-choice-menu .disable-choice {
+  color: #4b5563;
+}
+
 .reminder-row.completed .reminder-title,
 .reminder-row.completed .reminder-meta {
   color: #6b7280;
@@ -950,7 +954,10 @@ select:focus {
   background: rgba(22, 70, 58, 0.95);
   border: 2px solid rgba(244, 211, 94, 0.95);
   border-radius: 8px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  contain: layout paint;
+  will-change: transform;
+  backface-visibility: hidden;
   pointer-events: auto;
   animation: web-travel 28s linear infinite;
 }
@@ -1003,11 +1010,11 @@ select:focus {
 
 @keyframes web-travel {
   from {
-    transform: translateX(-92vw);
+    transform: translate3d(-92vw, 0, 0);
   }
 
   to {
-    transform: translateX(110vw);
+    transform: translate3d(110vw, 0, 0);
   }
 }
 

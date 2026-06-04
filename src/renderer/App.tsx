@@ -479,6 +479,24 @@ export function App(): JSX.Element {
     setStatus("已标记为进行中，30 分钟后会再次飘窗。");
   };
 
+  const disableReminder = async (item: ReminderItem): Promise<void> => {
+    setStatusMenuId(null);
+    const next = await window.reminderApi.saveReminder({
+      ...item,
+      completedAt: null,
+      enabled: false,
+      progressStatus: "todo",
+      progressSnoozedUntil: null
+    });
+    const saved = next.reminders.find((reminder) => reminder.id === item.id) ?? null;
+
+    setData(next);
+    setSelectedId(saved?.id ?? null);
+    setDraft(saved);
+    setActiveView("disabled");
+    setStatus("已停用，已移入已停用。");
+  };
+
   const updateSettings = async (settings: AppSettings): Promise<void> => {
     const next = await window.reminderApi.saveSettings(settings);
     setData(next);
@@ -617,6 +635,7 @@ export function App(): JSX.Element {
               const completed = isCompleted(item);
               const inProgress = isInProgress(item);
               const overdue = isOverdue(item);
+              const disabled = !completed && !item.enabled;
 
               return (
                 <div
@@ -644,7 +663,15 @@ export function App(): JSX.Element {
                       }}
                       onKeyDown={(event) => event.stopPropagation()}
                     >
-                      {completed ? <SquareCheck size={18} /> : inProgress ? <Clock3 size={18} /> : <Square size={18} />}
+                      {completed ? (
+                        <SquareCheck size={18} />
+                      ) : disabled ? (
+                        <Power size={18} />
+                      ) : inProgress ? (
+                        <Clock3 size={18} />
+                      ) : (
+                        <Square size={18} />
+                      )}
                     </button>
                     {statusMenuId === item.id ? (
                       <span className="status-choice-menu" onClick={(event) => event.stopPropagation()}>
@@ -655,6 +682,10 @@ export function App(): JSX.Element {
                         <button type="button" className="progress-choice" onClick={() => void markInProgress(item)}>
                           <Clock3 size={15} />
                           进行中
+                        </button>
+                        <button type="button" className="disable-choice" onClick={() => void disableReminder(item)}>
+                          <Power size={15} />
+                          停用
                         </button>
                       </span>
                     ) : null}

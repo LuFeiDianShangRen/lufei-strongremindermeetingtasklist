@@ -113,6 +113,46 @@ describe("renderer reminder creation", () => {
     expect(container.textContent).toContain("1 个提醒");
   });
 
+  it("shows the newest created reminder first", async () => {
+    data = {
+      ...data,
+      reminders: [
+        {
+          ...reminder("old", "旧任务"),
+          createdAt: "2026-05-30T00:00:00.000Z",
+          updatedAt: "2026-05-30T00:00:00.000Z"
+        },
+        {
+          ...reminder("new", "新任务"),
+          createdAt: "2026-06-01T00:00:00.000Z",
+          updatedAt: "2026-06-01T00:00:00.000Z"
+        }
+      ]
+    };
+
+    await act(async () => {
+      root.render(<App />);
+    });
+
+    expect(container.querySelector(".reminder-title")?.textContent).toBe("新任务");
+  });
+
+  it("marks overdue unfinished reminders in red", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-02T08:00:00.000Z"));
+    data = {
+      ...data,
+      reminders: [reminder("late", "超时任务", "2026-06-01T08:00:00.000Z")]
+    };
+
+    await act(async () => {
+      root.render(<App />);
+    });
+
+    expect(container.querySelector(".reminder-row")?.className).toContain("overdue");
+    expect(container.querySelector(".overdue-label")?.textContent).toBe("已超时");
+  });
+
   it("switches the editor when a different reminder is clicked", async () => {
     data = {
       ...data,

@@ -164,6 +164,10 @@ function isInProgress(item: ReminderItem): boolean {
   return !isCompleted(item) && item.progressStatus === "inProgress";
 }
 
+function isOverdue(item: ReminderItem): boolean {
+  return !isCompleted(item) && item.enabled && new Date(item.startAt).getTime() < Date.now();
+}
+
 function inProgressSnoozedUntil(): string {
   return new Date(Date.now() + IN_PROGRESS_SNOOZE_MINUTES * 60 * 1_000).toISOString();
 }
@@ -299,9 +303,13 @@ export function App(): JSX.Element {
 
   const sortedReminders = useMemo(
     () =>
-      [...data.reminders].sort(
-        (left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime()
-      ),
+      [...data.reminders].sort((left, right) => {
+        const createdDiff = new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+        if (createdDiff !== 0) {
+          return createdDiff;
+        }
+        return new Date(left.startAt).getTime() - new Date(right.startAt).getTime();
+      }),
     [data.reminders]
   );
 
@@ -608,13 +616,14 @@ export function App(): JSX.Element {
             visibleReminders.map((item) => {
               const completed = isCompleted(item);
               const inProgress = isInProgress(item);
+              const overdue = isOverdue(item);
 
               return (
                 <div
                   key={item.id}
                   role="button"
                   tabIndex={0}
-                  className={`reminder-row ${item.id === selectedId ? "selected" : ""} ${completed ? "completed" : ""} ${inProgress ? "in-progress" : ""}`}
+                  className={`reminder-row ${item.id === selectedId ? "selected" : ""} ${completed ? "completed" : ""} ${inProgress ? "in-progress" : ""} ${overdue ? "overdue" : ""}`}
                   onClick={() => selectReminder(item)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -654,6 +663,7 @@ export function App(): JSX.Element {
                     <span className="reminder-title">{item.title}</span>
                     <span className="reminder-meta">
                       {inProgress ? <span className="progress-label">进行中</span> : null}
+                      {overdue ? <span className="overdue-label">已超时</span> : null}
                       {new Date(item.startAt).toLocaleString()} · 提前 {item.leadMinutes.join(" / ")} 分钟
                     </span>
                   </span>

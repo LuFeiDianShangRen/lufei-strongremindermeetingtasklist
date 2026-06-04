@@ -442,6 +442,21 @@ button {
     0 0 0 1px #f4d06f;
 }
 
+.reminder-row.overdue {
+  background: #fff1f1;
+}
+
+.reminder-row.overdue:hover,
+.reminder-row.overdue.selected {
+  background: #ffe4e4;
+}
+
+.reminder-row.overdue.selected {
+  box-shadow:
+    inset 3px 0 0 #dc2626,
+    0 0 0 1px #f5b4b4;
+}
+
 .reminder-row:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: -2px;
@@ -559,6 +574,19 @@ button {
   font-size: 12px;
   font-weight: 800;
   background: #fde68a;
+  border-radius: 5px;
+}
+
+.overdue-label {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  margin-right: 6px;
+  padding: 0 6px;
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 800;
+  background: #fecaca;
   border-radius: 5px;
 }
 

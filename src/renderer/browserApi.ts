@@ -581,7 +581,7 @@ function installBrowserReminderApi(): void {
     },
     performMenuAction: async (action: string) => {
       if (action === "file-about") {
-        window.alert("路飞工作清单\n版本：1.0.6\n版权公告：路飞版权所有");
+        window.alert("路飞工作清单\n版本：1.0.7\n版权公告：路飞版权所有");
         return;
       }
       if (action === "file-web") {

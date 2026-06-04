@@ -14,7 +14,13 @@ function Overlay(): JSX.Element {
 
   return (
     <div className="overlay-stage">
-      <span className="floating-alert">
+      <span
+        className="floating-alert"
+        onMouseEnter={() => window.reminderApi.setOverlayInteractive(true)}
+        onMouseLeave={() => window.reminderApi.setOverlayInteractive(false)}
+        onFocus={() => window.reminderApi.setOverlayInteractive(true)}
+        onBlur={() => window.reminderApi.setOverlayInteractive(false)}
+      >
         <span className="alert-copy">
           <span className="alert-title">{alert.title}</span>
           <span className="alert-detail">

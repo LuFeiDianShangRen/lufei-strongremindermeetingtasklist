@@ -318,7 +318,7 @@ function createOverlayWindow(alert: AlertOccurrence, displayBounds: Electron.Rec
 
   overlay.setAlwaysOnTop(true, "screen-saver");
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  overlay.setIgnoreMouseEvents(false);
+  overlay.setIgnoreMouseEvents(true, { forward: true });
 
   const loadPromise = isDev
     ? overlay.loadURL(`${rendererRoot}/overlay.html`)
@@ -330,11 +330,20 @@ function createOverlayWindow(alert: AlertOccurrence, displayBounds: Electron.Rec
   });
 
   overlay.on("closed", () => {
-    const windows = overlayWindows.get(alert.key) ?? [];
-    overlayWindows.set(
-      alert.key,
-      windows.filter((window) => window !== overlay)
-    );
+    const windows = overlayWindows.get(alert.key);
+
+    if (!windows) {
+      return;
+    }
+
+    const remainingWindows = windows.filter((window) => window !== overlay && !window.isDestroyed());
+
+    if (remainingWindows.length > 0) {
+      overlayWindows.set(alert.key, remainingWindows);
+      return;
+    }
+
+    overlayWindows.delete(alert.key);
   });
 
   return overlay;
@@ -343,6 +352,25 @@ function createOverlayWindow(alert: AlertOccurrence, displayBounds: Electron.Rec
 function closeOverlayWindows(key: string): void {
   const windows = (overlayWindows.get(key) ?? []).filter((window) => !window.isDestroyed());
   overlayWindows.delete(key);
+
+  for (const window of windows) {
+    window.close();
+  }
+}
+
+function closeAllOverlayWindows(): void {
+  const trackedWindows = Array.from(overlayWindows.values()).flat();
+  const untrackedOverlayWindows = BrowserWindow.getAllWindows().filter((window) => {
+    if (window.isDestroyed()) {
+      return false;
+    }
+
+    return window.webContents.getURL().includes("overlay.html");
+  });
+  const windows = Array.from(new Set([...trackedWindows, ...untrackedOverlayWindows])).filter(
+    (window) => !window.isDestroyed()
+  );
+  overlayWindows.clear();
 
   for (const window of windows) {
     window.close();
@@ -586,11 +614,26 @@ function registerIpc(): void {
   });
 
   ipcMain.on("overlay:acknowledge", (_event, key: string) => {
-    closeOverlayWindows(key);
+    closeAllOverlayWindows();
     void store
       .acknowledgeAlert(key)
       .then(() => store.getData())
       .then((data) => broadcastDataChanged(data));
+  });
+
+  ipcMain.on("overlay:interactive", (event, interactive: boolean) => {
+    const overlay = BrowserWindow.fromWebContents(event.sender);
+
+    if (!overlay || overlay.isDestroyed() || !overlay.webContents.getURL().includes("overlay.html")) {
+      return;
+    }
+
+    if (interactive) {
+      overlay.setIgnoreMouseEvents(false);
+      return;
+    }
+
+    overlay.setIgnoreMouseEvents(true, { forward: true });
   });
 }
 

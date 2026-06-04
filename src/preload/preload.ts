@@ -30,7 +30,8 @@ const api = {
     ipcRenderer.on("overlay:alert", listener);
     return () => ipcRenderer.off("overlay:alert", listener);
   },
-  acknowledgeOverlay: (key: string): void => ipcRenderer.send("overlay:acknowledge", key)
+  acknowledgeOverlay: (key: string): void => ipcRenderer.send("overlay:acknowledge", key),
+  setOverlayInteractive: (interactive: boolean): void => ipcRenderer.send("overlay:interactive", interactive)
 };
 
 contextBridge.exposeInMainWorld("reminderApi", api);

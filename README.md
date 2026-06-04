@@ -37,7 +37,7 @@ npm run dev
 
 最新 Windows 免安装版：
 
-- [strongremindermeetingtasklist-v1.0.4-windows-portable.zip](https://github.com/LuFeiDianShangRen/strongremindermeetingtasklist/releases/download/v1.0.4/strongremindermeetingtasklist-v1.0.4-windows-portable.zip)
+- [strongremindermeetingtasklist-v1.0.5-windows-portable.zip](https://github.com/LuFeiDianShangRen/strongremindermeetingtasklist/releases/download/v1.0.5/strongremindermeetingtasklist-v1.0.5-windows-portable.zip)
 
 全部版本：
 
@@ -64,8 +64,8 @@ npm run package:portable
 生成结果：
 
 ```text
-release/1.0.4/win-unpacked/路飞-强提醒会议任务清单.exe
-release/路飞-强提醒会议任务清单免安装版 1.0.4.zip
+release/1.0.5/win-unpacked/路飞-强提醒会议任务清单.exe
+release/路飞-强提醒会议任务清单免安装版 1.0.5.zip
 ```
 
 ## 生成安装包
@@ -77,7 +77,7 @@ npm run package:installer
 生成结果：
 
 ```text
-release/路飞-强提醒会议任务清单安装包 1.0.4.exe
+release/路飞-强提醒会议任务清单安装包 1.0.5.exe
 ```
 
 ## 数据存储
